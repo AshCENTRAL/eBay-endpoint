@@ -4,7 +4,6 @@ const app = express();
 
 const VERIFICATION_TOKEN = "ebay_production_2024_secure_token_abc123xyz";
 
-// Trust proxy - important for Render
 app.set('trust proxy', true);
 app.use(express.json());
 
@@ -13,12 +12,14 @@ app.get("*", (req, res) => {
   
   console.log("=== GET Request ===");
   console.log("Challenge code:", challengeCode);
-  console.log("Full URL:", req.url);
-  console.log("Query params:", req.query);
+  console.log("Host:", req.get('host'));
+  console.log("Path:", req.path);
   
   if (challengeCode) {
-    // Force HTTPS for the endpoint URL
-    const endpointUrl = `https://${req.get('host')}${req.path}`;
+    // Build endpoint URL WITHOUT trailing slash (unless path has it)
+    const host = req.get('host');
+    const path = req.path === '/' ? '' : req.path;  // Remove trailing slash
+    const endpointUrl = `https://${host}${path}`;
     
     console.log("Endpoint URL:", endpointUrl);
     console.log("Verification Token:", VERIFICATION_TOKEN);
@@ -42,8 +43,7 @@ app.get("*", (req, res) => {
       .json(response);
   }
   
-  // No challenge code
-  console.log("No challenge code provided");
+  console.log("No challenge code");
   res.json({ status: "eBay endpoint is active" });
 });
 
@@ -57,5 +57,4 @@ app.post("*", (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
-  console.log("Verification token: " + VERIFICATION_TOKEN);
 });
